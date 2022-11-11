@@ -1,5 +1,5 @@
 [package]
-name = "distributed-arcade"
+name = "distributed_arcade"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,3 +11,7 @@ axum = { version = "0.5.17" }
 tokio = { version = "1.21.2", features=["full"] }
 r2d2 = { version = "0.8.10" }
 lazy_static = { version = "1.4.0" }
+serde = { version = "1.0.147", features=["derive"] }
+serde_json = { version = "1.0.87" }
+log = { version = "0.4.17" }
+pretty_env_logger = { version = "0.4.0" }
