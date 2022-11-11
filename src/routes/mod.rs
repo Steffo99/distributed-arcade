@@ -1,2 +1,3 @@
-pub mod home;
-pub mod board;
+pub(crate) mod home;
+pub(crate) mod board;
+pub(crate) mod score;

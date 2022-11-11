@@ -1,8 +1,10 @@
-mod config;
+pub(crate) mod config;
+pub(crate) mod outcome;
+pub mod types;
 mod routes;
-mod outcome;
 
-use axum::routing::{get, post};
+
+use axum::routing::{get, post, put};
 
 
 #[tokio::main]
@@ -20,6 +22,7 @@ async fn main() {
     let webapp = axum::Router::new()
         .route("/", get(routes::home::route_home_get))
         .route("/board/", post(routes::board::route_board_post))
+        .route("/score/", put(routes::score::route_score_put))
         .layer(axum::Extension(rclient));
 
     log::info!("Starting Axum server...");

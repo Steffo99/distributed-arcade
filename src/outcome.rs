@@ -33,7 +33,7 @@ macro_rules! req_success {
 pub(crate) use req_success;
 
 /// The server could not connect to Redis.
-pub(crate) fn redis_conn_failed(_err: redis::RedisError) -> RequestTuple {
+pub(crate) fn redis_conn_failed() -> RequestTuple {
     (
         StatusCode::GATEWAY_TIMEOUT, 
         req_error!("Could not connect to Redis")
@@ -41,7 +41,7 @@ pub(crate) fn redis_conn_failed(_err: redis::RedisError) -> RequestTuple {
 }
 
 /// The execution of a command in Redis failed.
-pub(crate) fn redis_cmd_failed(_err: redis::RedisError) -> RequestTuple {
+pub(crate) fn redis_cmd_failed() -> RequestTuple {
     (
         StatusCode::BAD_GATEWAY, 
         req_error!("Could not execute Redis command")

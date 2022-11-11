@@ -152,6 +152,7 @@ dependencies = [
  "r2d2",
  "rand",
  "redis",
+ "regex",
  "serde",
  "serde_json",
  "tokio",
