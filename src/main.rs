@@ -1,5 +1,6 @@
 mod config;
 mod routes;
+mod outcome;
 
 use axum::routing::{get, post};
 

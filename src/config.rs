@@ -11,4 +11,7 @@ lazy_static! {
         .expect("AXUM_HOST_STRING to be set")
         .parse()
         .expect("AXUM_HOST_STRING to be a valid SocketAddr");
+
+    pub static ref CREATE_TOKEN: String = env::var("CREATE_TOKEN")
+        .expect("CREATE_TOKEN to be set");
 }
