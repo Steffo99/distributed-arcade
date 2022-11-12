@@ -25,14 +25,6 @@ pub(crate) struct RouteScorePutInput {
 }
 
 
-/// Expected output data for `PUT /score/`.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct RouteScorePutOutput {
-    /// The best score of the player.
-    score: f64,
-}
-
-
 /// Handler for `PUT /score/`.
 pub(crate) async fn route_score_put(
     // Request headers
