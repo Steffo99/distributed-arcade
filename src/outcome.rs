@@ -42,11 +42,3 @@ pub(crate) fn redis_unexpected_behaviour() -> RequestTuple {
         req_error!("Redis gave an unexpected response")
     )
 }
-
-/// The request succeeded, and there's no data to be returned.
-pub(crate) fn success_null() -> RequestTuple {
-    (
-        StatusCode::OK, 
-        req_success!(null)
-    )
-}

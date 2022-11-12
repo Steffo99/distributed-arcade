@@ -1,0 +1,51 @@
+### Verify that the webserver is working
+GET http://localhost:30000/
+
+### Verify that everything is working
+POST http://localhost:30000/
+
+### Create a board
+POST http://localhost:30000/board/
+Content-Type: application/json
+
+{
+    "name": "example",
+    "order": "Descending"
+}
+
+### Set a score on the board
+PUT http://localhost:30000/score/?board=example&player=steffo
+Content-Type: application/json
+Authorization: Bearer adz313TlarO98B0P
+
+1234.56
+
+### Set another score on the board
+PUT http://localhost:30000/score/?board=example&player=offets
+Content-Type: application/json
+Authorization: Bearer adz313TlarO98B0P
+
+2412.25
+
+### Improve the first score
+PUT http://localhost:30000/score/?board=example&player=steffo
+Content-Type: application/json
+Authorization: Bearer adz313TlarO98B0P
+
+6666.66
+
+### Set a third score
+PUT http://localhost:30000/score/?board=example&player=oooooo
+Content-Type: application/json
+Authorization: Bearer adz313TlarO98B0P
+
+3333.33
+
+### Get the leaderboards
+GET http://localhost:30000/board/?board=example&offset=0&size=10
+
+### Get a player's rank
+GET http://localhost:30000/score/?board=example&player=steffo
+
+### Get another player's rank
+GET http://localhost:30000/score/?board=example&player=offets

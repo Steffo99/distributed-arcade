@@ -1,25 +1,22 @@
 //! Module defining routes for `/`.
 
 use axum::Extension;
+use axum::http::StatusCode;
 use crate::outcome;
 use crate::shortcuts::redis::RedisConnectOr504;
 
 
 /// Handler for `GET /`.
-///
-/// Verifies that the web server is working correctly.
-pub(crate) async fn route_home_get() -> outcome::RequestResult {
+pub(crate) async fn route_home_get() -> StatusCode {
     log::trace!("Echoing back a success...");
-    Ok(outcome::success_null())
+    StatusCode::NO_CONTENT
 }
 
 
-/// Handler for `PATCH /`.
-///
-/// Pings Redis to verify that everything is working correctly.
-pub(crate) async fn route_home_patch(
+/// Handler for `POST /`.
+pub(crate) async fn route_home_post(
     Extension(rclient): Extension<redis::Client>
-) -> outcome::RequestResult {
+) -> Result<StatusCode, outcome::RequestTuple> {
 
     let mut rconn = rclient.get_connection_or_504().await?;
 
@@ -28,6 +25,6 @@ pub(crate) async fn route_home_patch(
         .query_async::<redis::aio::Connection, String>(&mut rconn).await
         .map_err(outcome::redis_cmd_failed)?
         .eq("PONG")
-        .then(outcome::success_null)
+        .then(|| StatusCode::NO_CONTENT)
         .ok_or_else(outcome::redis_unexpected_behaviour)
 }

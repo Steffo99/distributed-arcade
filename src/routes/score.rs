@@ -23,6 +23,15 @@ pub(crate) struct RouteScoreQuery {
 }
 
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub(crate) struct RouteScoreResponse {
+    /// The score the user has on the board.
+    pub score: f64,
+    /// The position of the user relative to the other users on the board, zero-based.
+    pub rank: usize,
+}
+
+
 /// Handler for `GET /score/`.
 pub(crate) async fn route_score_get(
     // Request query
@@ -33,7 +42,8 @@ pub(crate) async fn route_score_get(
     let board = board.to_kebab_lowercase();
     let player = player.to_kebab_lowercase();
 
-    log::trace!("Determining the Redis key name...");
+    log::trace!("Determining the Redis key names...");
+    let order_key = format!("board:{board}:order");
     let scores_key = format!("board:{board}:scores");
 
     let mut rconn = rclient.get_connection_or_504().await?;
@@ -43,9 +53,25 @@ pub(crate) async fn route_score_get(
         .map_err(outcome::redis_cmd_failed)?;
     log::trace!("Score is: {score:?}");
 
+    log::trace!("Determining sorting order...");
+    let order = rconn.get::<&str, String>(&order_key).await
+        .map_err(outcome::redis_cmd_failed)?;
+    let order = SortingOrder::try_from(order.as_str())
+        .map_err(|_| outcome::redis_unexpected_behaviour())?;
+    log::trace!("Sorting order is: {order:?}");
+
+    log::trace!("Getting rank...");
+    let rank = match order {
+        SortingOrder::Ascending => rconn.zrank::<&str, &str, usize>(&scores_key, &player),
+        SortingOrder::Descending => rconn.zrevrank::<&str, &str, usize>(&scores_key, &player),
+    }.await.map_err(outcome::redis_cmd_failed)?;
+    log::trace!("Rank is: {rank:?}");
+
+    let result = RouteScoreResponse {score, rank};
+
     Ok((
         StatusCode::OK,
-        outcome::req_success!(score)
+        outcome::req_success!(result)
     ))
 }
 
@@ -69,7 +95,7 @@ pub(crate) async fn route_score_put(
     let token_key = format!("board:{board}:token");
     let scores_key = format!("board:{board}:scores");
 
-    let token = headers.get_authorization_or_401("X-Board-Token")?;
+    let token = headers.get_authorization_or_401("Bearer")?;
     let mut rconn = rclient.get_connection_or_504().await?;
 
     log::trace!("Checking if the token exists and matches...");
@@ -102,12 +128,21 @@ pub(crate) async fn route_score_put(
     let nscore = rconn.zscore::<&str, &str, f64>(&scores_key, &player).await
         .map_err(outcome::redis_cmd_failed)?;
     log::trace!("Received score: {nscore:?}");
-    
+
+    log::trace!("Getting rank...");
+    let rank = match order {
+        SortingOrder::Ascending => rconn.zrank::<&str, &str, usize>(&scores_key, &player),
+        SortingOrder::Descending => rconn.zrevrank::<&str, &str, usize>(&scores_key, &player),
+    }.await.map_err(outcome::redis_cmd_failed)?;
+    log::trace!("Rank is: {rank:?}");
+
+    let result = RouteScoreResponse {score, rank};
+
     Ok((
         match changed.gt(&0) {
             true => StatusCode::CREATED,
             false => StatusCode::OK,
         },
-        outcome::req_success!(nscore)
+        outcome::req_success!(result)
     ))
 }

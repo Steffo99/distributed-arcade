@@ -5,7 +5,7 @@ mod routes;
 mod shortcuts;
 
 
-use axum::routing::{get, post, put, patch};
+use axum::routing::{get, post, put};
 
 
 #[tokio::main]
@@ -22,12 +22,15 @@ async fn main() {
 
     let webapp = axum::Router::new()
         .route("/", get(routes::home::route_home_get))
-        .route("/", patch(routes::home::route_home_patch))
+        .route("/", post(routes::home::route_home_post))
         .route("/board/", get(routes::board::route_board_get))
         .route("/board/", post(routes::board::route_board_post))
         .route("/score/", get(routes::score::route_score_get))
         .route("/score/", put(routes::score::route_score_put))
-        .layer(axum::Extension(rclient));
+        .layer(axum::Extension(rclient))
+        .layer(tower_http::cors::CorsLayer::new()
+            .allow_origin("*")
+        );
 
     log::info!("Starting Axum server...");
 

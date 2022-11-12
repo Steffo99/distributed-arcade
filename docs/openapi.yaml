@@ -2,16 +2,32 @@ openapi: 3.0.3
 
 info:
   title: "Distributed Arcade"
+  version: 0.2.0
   description: |-
     A super-fast high score gatherer using Rust and Redis.
-  version: 0.1.0
+    
+    It allows the creation of _boards_, [sorted sets](https://redis.io/docs/data-types/sorted-sets/) that can be used to track the scores of players in videogames.
+    
+    It is written to be extremely fast and scalable: it should be able to receive bursts of many requests.
+    
+    Errors can be distinguished from successful requests via HTTP status codes >=400.
+  contact:
+    name: "Stefano Pigozzi"
+    url: "https://www.steffo.eu"
+    email: "me@steffo.eu"
+  license:
+    name: "GNU Affero General Public License v3.0 or later"
+    url: https://github.com/Steffo99/distributed-arcade/blob/main/LICENSE.txt"
 
 servers:
+  - url: "https://arcade.steffo.eu"
+    description: "Experimental production server"
   - url: "http://127.0.0.1:30000"
+    description: "Local development server"
 
 tags:
   - name: "Home"
-    description: "Miscellaneous routes"
+    description: "Launch checklist"
   - name: "Board"
     description: "About boards"
   - name: "Score"
@@ -20,27 +36,23 @@ tags:
 paths:
   /:
     get:
+      operationId: "getHome"
       summary: "Verify that the web server is working as expected"
+      description: |-
+        This method simply echoes back a response, and can be used to verify that the API web server is working.
       tags: ["Home"]
       responses:
-        200:
+        204:
           description: "Working as expected"
-          content:
-            application/json:
-              schema:
-                nullable: true
-                example: null
-    patch:
+    post:
+      operationId: "postHome"
       summary: "Verify that everything is working as expected"
+      description: |-
+        This method is like `GET /`, but it also `PING`s the Redis server to ensure it is working and configured properly.
       tags: ["Home"]
       responses:
-        200:
+        204:
           description: "Working as expected"
-          content:
-            application/json:
-              schema:
-                nullable: true
-                example: null
         500:
           description: "Did not receive `PONG` from redis"
           content:
@@ -55,7 +67,13 @@ paths:
 
   /board/:
     get:
+      operationId: "getBoard"
       summary: "Get the scores of a board"
+      description: |-
+        This method requests a page of scores from a board using the [`ZSCAN`](https://redis.io/commands/zscan/) Redis command.
+        
+        An offset must be specified to start returning scores from a certain index.        
+        The number of responses to return must be specified as well.
       tags: ["Board"]
       parameters:
         - $ref: "#/components/parameters/board"
@@ -67,33 +85,37 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  offset:
-                    type: integer
-                    description: "The offset to pass to get the next page, or 0 if there are no more results."
-                    example: 1
-                  scores:
-                    type: array
-                    items:
-                      type: object
-                      description: "A score submitted by an user."
-                      properties:
-                        name:
-                          type: string
-                          description: "The name of the user who submitted the score."
-                          example: "Steffo"
-                        score:
-                          type: number
-                          description: "The submitted score."
-                          example: 1234.56
+                type: array
+                items:
+                  type: object
+                  description: "A score submitted by an user."
+                  properties:
+                    name:
+                      type: string
+                      description: "The name of the user who submitted the score."
+                      example: "Steffo"
+                    score:
+                      type: number
+                      description: "The submitted score."
+                      example: 1234.56
         502:
           $ref: "#/components/responses/RedisCmdFailed"
         504:
           $ref: "#/components/responses/RedisConnFailed"
-
     post:
+      operationId: "postBoard"
       summary: "Create a new board"
+      description: |-
+        This method creates a new board.
+        
+        It returns its _score submission token_ (`XBoardToken` in this spec), which is required to submit new scores to the board.
+        
+        Boards can use two different orders:
+        
+        - using the `Ascending` order, lower scores are better ranked than higher scores, like in racing games or golf;
+        - using the `Descending` order, higher scores are better ranked than lower scores, like in arcade games or athletics.
+        
+        **WARNING: Once created, a board cannot be edited or deleted, and its token will not be accessible any longer!**
       tags: ["Board"]
       requestBody:
         required: true
@@ -104,15 +126,15 @@ paths:
               properties:
                 name:
                   type: string
-                  description: "The name of the board to create."
+                  description: "The name of the board to create. It will be converted to kebab-case."
                   example: "gravityfusion"
                 order:
                   type: string
-                  example: "DSC"
+                  example: "Descending"
                   description: "The ordering of the board, either ascending or descending."
                   enum:
-                    - "ASC"
-                    - "DSC"
+                    - "Ascending"
+                    - "Descending"
       responses:
         201:
           description: "Board created successfully"
@@ -121,6 +143,15 @@ paths:
               schema:
                 type: string
                 example: "W4SbhbJ3tnGaIM1S"
+          links:
+            getScore:
+              operationId: "getScore"
+              parameters:
+                board: "$response.body/name"
+            putScore:
+              operationId: "putScore"
+              parameters:
+                board: "$response.body/name"
         409:
           description: "Board already exists"
           content:
@@ -142,7 +173,10 @@ paths:
 
   /score/:
     get:
+      operationId: "getScore"
       summary: "Get a score from a board"
+      description: |-
+        Retrieve the score and the position that the given user has on the leaderboard.
       tags: ["Score"]
       parameters:
         - $ref: "#/components/parameters/board"
@@ -153,15 +187,23 @@ paths:
           content:
             application/json:
               schema:
-                type: number
-                description: "The score of the specified player."
-                example: 1234.56
+                type: object
+                properties:
+                  score:
+                    type: number
+                    description: "The score of the specified player."
+                    example: 1234.56
+                  rank:
+                    type: integer
+                    description: "The zero-indexed rank of the specified player. (You may probably want to add `1` before displaying it to an user.)"
+                    example: 0
         502:
           $ref: "#/components/responses/RedisCmdFailed"
         504:
           $ref: "#/components/responses/RedisConnFailed"
 
     put:
+      operationId: "putScore"
       summary: "Submit a score to a board"
       tags: ["Score"]
       parameters:
@@ -183,17 +225,31 @@ paths:
           content:
             application/json:
               schema:
-                type: number
-                description: "The previous score."
-                example: 2468.12
+                type: object
+                properties:
+                  score:
+                    type: number
+                    description: "The score of the specified player."
+                    example: 1234.56
+                  rank:
+                    type: integer
+                    description: "The zero-indexed rank of the specified player. (You may probably want to add `1` before displaying it to an user.)"
+                    example: 0
         201:
           description: "Score submitted and updated"
           content:
             application/json:
               schema:
-                type: number
-                description: "The new score."
-                example: 1234.56
+                type: object
+                properties:
+                  score:
+                    type: number
+                    description: "The score of the specified player."
+                    example: 2468.13
+                  rank:
+                    type: integer
+                    description: "The zero-indexed rank of the specified player. (You may probably want to add `1` before displaying it to an user.)"
+                    example: 0
         401:
           description: "Missing, invalid or malformed Authorization header"
           content:
@@ -210,9 +266,9 @@ paths:
 components:
   securitySchemes:
     XBoardToken:
-      type: apiKey
-      in: header
-      name: "Authorization"
+      type: http
+      scheme: "Bearer"
+      bearerFormat: "gVsuzIxgVfRx4RNl"
 
   parameters:
     board:

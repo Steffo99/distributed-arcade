@@ -35,16 +35,6 @@ pub(crate) struct RouteBoardQuery {
 }
 
 
-/// Expected response for [`GET /board/`](route_board_get).
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct RouteBoardResponse {
-    /// The offset of the next page.
-    pub(crate) offset: usize,
-    /// The scores of the current page.
-    pub(crate) scores: Vec<ScoreObject>,
-}
-
-
 /// A score set by a player, as a serializable struct.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct ScoreObject {
@@ -56,18 +46,13 @@ pub(crate) struct ScoreObject {
 
 impl From<(String, f64)> for ScoreObject {
     fn from(t: (String, f64)) -> Self {
-        ScoreObject {name: t.0, score: t.1}
-    }
-}
-
-impl From<(usize, Vec<(String, f64)>)> for RouteBoardResponse {
-    fn from(t: (usize, Vec<(String, f64)>)) -> Self {
-        RouteBoardResponse {
-            offset: t.0,
-            scores: t.1.into_iter().map(From::from).collect()
+        ScoreObject {
+            name: t.0,
+            score: t.1
         }
     }
 }
+
 
 /// Ensure that there is nothing stored at a certain Redis key.
 async fn ensure_key_is_empty(rconn: &mut redis::aio::Connection, key: &str) -> Result<(), outcome::RequestTuple> {
@@ -100,15 +85,33 @@ pub(crate) async fn route_board_get(
     }
 
     log::trace!("Determining the Redis key name...");
+    let order_key = format!("board:{board}:order");
     let scores_key = format!("board:{board}:scores");
 
     let mut rconn = rclient.get_connection_or_504().await?;
 
+    log::trace!("Determining sorting order...");
+    let order = rconn.get::<&str, String>(&order_key).await
+        .map_err(outcome::redis_cmd_failed)?;
+    let order = SortingOrder::try_from(order.as_str())
+        .map_err(|_| outcome::redis_unexpected_behaviour())?;
+    log::trace!("Sorting order is: {order:?}");
+
+    log::trace!("Building score retrieval command...");
+    let mut cmd = redis::Cmd::new();
+    let mut cmd_with_args = cmd.arg("ZRANGE").arg(&scores_key).arg(&offset).arg(&offset + &size);
+    if let SortingOrder::Descending = &order {
+        cmd_with_args = cmd_with_args.arg("REV");
+    }
+    cmd_with_args = cmd_with_args.arg("WITHSCORES");
+
     log::trace!("Retrieving scores from {board}...");
-    let result: RouteBoardResponse = redis::cmd("ZSCAN").arg(&scores_key).arg(offset).arg("COUNT").arg(&size)
-        .query_async::<redis::aio::Connection, (usize, Vec<(String, f64)>)>(&mut rconn).await
+    let result: Vec<ScoreObject> = cmd_with_args
+        .query_async::<redis::aio::Connection, Vec<(String, f64)>>(&mut rconn).await
         .map_err(outcome::redis_cmd_failed)?
-        .into();
+        .into_iter()
+        .map(From::<(String, f64)>::from)
+        .collect();
 
     Ok((StatusCode::OK, outcome::req_success!(result)))
 }
