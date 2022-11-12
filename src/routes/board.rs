@@ -99,7 +99,7 @@ pub(crate) async fn route_board_get(
 
     log::trace!("Building score retrieval command...");
     let mut cmd = redis::Cmd::new();
-    let mut cmd_with_args = cmd.arg("ZRANGE").arg(&scores_key).arg(&offset).arg(&offset + &size);
+    let mut cmd_with_args = cmd.arg("ZRANGE").arg(&scores_key).arg(&offset).arg(offset + size);
     if let SortingOrder::Descending = &order {
         cmd_with_args = cmd_with_args.arg("REV");
     }
