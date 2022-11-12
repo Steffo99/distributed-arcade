@@ -4,11 +4,13 @@ use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
 use axum::extract::{Extension, Json};
 use redis::AsyncCommands;
-use regex::Regex;
 use serde::Serialize;
 use serde::Deserialize;
 use crate::outcome;
-use crate::types::SortingOrder;
+use crate::shortcuts::redis::RedisConnectOr504;
+use crate::shortcuts::token::Authorize;
+use crate::utils::kebab::Skewer;
+use crate::utils::sorting::SortingOrder;
 
 
 /// Expected input data for `PUT /score/`.
@@ -40,35 +42,15 @@ pub(crate) async fn route_score_put(
     // Redis client
     Extension(rclient): Extension<redis::Client>,
 ) -> outcome::RequestResult {
-    lazy_static::lazy_static! {
-        static ref AUTH_HEADER_REGEX: Regex = Regex::new(r#"X-Board (\S+)"#)
-            .expect("AUTH_HEADER_REGEX to be valid");
-    }
-
-    log::trace!("Checking the Authorization header...");
-    let token = headers.get("Authorization")
-        .ok_or_else(|| (StatusCode::UNAUTHORIZED, outcome::req_error!("Missing Authorization header")))?;
-
-    let token = token.to_str()
-        .map_err(|_| (StatusCode::BAD_REQUEST, outcome::req_error!("Malformed Authorization header")))?;
-
-    let token = AUTH_HEADER_REGEX.captures(token)
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, outcome::req_error!("Malformed Authorization header")))?;
-
-    let token = token.get(1)
-        .ok_or_else(|| (StatusCode::UNAUTHORIZED, outcome::req_error!("Invalid Authorization header")))?;
-
-    let token = token.as_str();
-    log::trace!("Received token: {token:?}");
+    let board = board.to_kebab_lowercase();
 
     log::trace!("Determining the Redis key names...");
     let order_key = format!("board:{board}:order");
     let token_key = format!("board:{board}:token");
     let scores_key = format!("board:{board}:scores");
 
-    log::trace!("Connecting to Redis...");
-    let mut rconn = rclient.get_async_connection().await
-        .map_err(|_| outcome::redis_conn_failed())?;
+    let token = headers.get_authorization_or_401("X-Board-Token")?;
+    let mut rconn = rclient.get_connection_or_504().await?;
 
     log::trace!("Checking if the token exists and matches...");
     let btoken = rconn.get::<&str, String>(&token_key).await
@@ -84,11 +66,12 @@ pub(crate) async fn route_score_put(
         return Err((StatusCode::FORBIDDEN, outcome::req_error!("Invalid board token"))) 
     }
     
-    log::trace!("Determining score insertion mode...");
+    log::trace!("Determining sorting order...");
     let order = rconn.get::<&str, String>(&order_key).await
         .map_err(|_| outcome::redis_cmd_failed())?;
-    let order = SortingOrder::try_from(order)
+    let order = SortingOrder::try_from(order.as_str())
         .map_err(|_| outcome::redis_unexpected_behaviour())?;
+    log::trace!("Sorting order is: {order:?}");
 
     log::trace!("Inserting score: {score:?}");
     redis::cmd("ZADD").arg(&scores_key).arg(order.zadd_mode()).arg(&score).arg(&player).query_async(&mut rconn).await
@@ -101,6 +84,6 @@ pub(crate) async fn route_score_put(
     
     Ok((
         StatusCode::OK,
-        Json(serde_json::to_value(RouteScorePutOutput {score: nscore}).expect("to be able to serialize RouteScorePutOutput"))
+        outcome::req_success!(nscore)
     ))
 }

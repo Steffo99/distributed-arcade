@@ -1,0 +1,163 @@
+openapi: 3.0.3
+
+info:
+  title: "Distributed Arcade"
+  description: |-
+    A super-fast high score gatherer using Rust and Redis.
+  version: 0.1.0
+
+servers:
+  - url: "http://127.0.0.1:30000"
+
+tags:
+  - name: "Home"
+    description: "Miscellaneous routes"
+  - name: "Board"
+    description: "About boards"
+  - name: "Score"
+    description: "Submit scores"
+
+paths:
+  /:
+    get:
+      summary: "Verify that the web server is working as expected"
+      tags: ["Home"]
+      responses:
+        200:
+          description: "Working as expected"
+          content:
+            application/json:
+              schema:
+                type: "null"
+    patch:
+      summary: "Verify that everything is working as expected"
+      tags: ["Home"]
+      responses:
+        200:
+          description: "Working as expected"
+          content:
+            application/json:
+              schema:
+                type: "null"
+        500:
+          description: "Did not receive `PONG` from redis"
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Redis gave an unexpected response"
+        502:
+          $ref: "#/components/responses/RedisCmdFailed"
+        504:
+          $ref: "#/components/responses/RedisConnFailed"
+
+  /board/:
+    post:
+      summary: "Create a new board"
+      tags: ["Board"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: "The name of the board to create."
+                  example: "gravityfusion"
+                order:
+                  type: string
+                  example: "DSC"
+                  description: "The ordering of the board, either ascending or descending."
+                  enum:
+                    - "ASC"
+                    - "DSC"
+      responses:
+        201:
+          description: "Board created successfully"
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "W4SbhbJ3tnGaIM1S"
+        409:
+          description: "Board already exists"
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Board already exists"
+        500:
+          description: "Could not generate secure board token"
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Could not generate secure board token"
+        502:
+          $ref: "#/components/responses/RedisCmdFailed"
+        504:
+          $ref: "#/components/responses/RedisConnFailed"
+
+  /score/:
+    put:
+      summary: "Submit a score to a board"
+      tags: ["Score"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                board:
+                  type: string
+                  description: "The board to submit the score to."
+                  example: "gravityfusion"
+                score:
+                  type: number
+                  description: "The score to submit to the board."
+                  example: 1234.56
+                player:
+                  type: string
+                  description: "The name of the player that the score should be submitted as."
+                  example: "Steffo"
+      security:
+        - XBoardToken: []
+      responses:
+        401:
+          description: "Missing, invalid or malformed Authorization header"
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "Missing Authorization header"
+        502:
+          $ref: "#/components/responses/RedisCmdFailed"
+        504:
+          $ref: "#/components/responses/RedisConnFailed"
+
+
+components:
+  securitySchemes:
+    XBoardToken:
+      type: apiKey
+      in: header
+      name: "Authorization"
+
+  responses:
+    RedisCmdFailed:
+      description: "Could not execute Redis command"
+      content:
+        application/json:
+          schema:
+            type: string
+            example: "Could not execute Redis command"
+    RedisConnFailed:
+      description: "Could not connect to Redis"
+      content:
+        application/json:
+          schema:
+            type: string
+            example: "Could not connect to Redis"

@@ -2,18 +2,26 @@
 
 use axum::Extension;
 use crate::outcome;
+use crate::shortcuts::redis::RedisConnectOr504;
 
 
 /// Handler for `GET /`.
 ///
+/// Verifies that the web server is working correctly.
+pub(crate) async fn route_home_get() -> outcome::RequestResult {
+    log::trace!("Echoing back a success...");
+    Ok(outcome::success_null())
+}
+
+
+/// Handler for `PATCH /`.
+///
 /// Pings Redis to verify that everything is working correctly.
-pub(crate) async fn route_home_get(
+pub(crate) async fn route_home_patch(
     Extension(rclient): Extension<redis::Client>
 ) -> outcome::RequestResult {
 
-    log::trace!("Connecting to Redis...");
-    let mut rconn = rclient.get_async_connection().await
-        .map_err(|_| outcome::redis_conn_failed())?;
+    let mut rconn = rclient.get_connection_or_504().await?;
 
     log::trace!("Sending PING and expecting PONG...");
     redis::cmd("PING")

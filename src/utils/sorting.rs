@@ -1,5 +1,4 @@
-//! Module containing various types recurring in multiple modules of the crate.
-
+//! Module defining and implementing [`SortingOrder`].
 
 use serde::Serialize;
 use serde::Deserialize;
@@ -9,10 +8,9 @@ use serde::Deserialize;
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum SortingOrder {
     /// The greater the score, the worse it is.
-    #[serde(rename = "ASC")]
     Ascending,
+
     /// The greater the score, the better it is.
-    #[serde(rename = "DSC")]
     Descending,
 }
 
@@ -27,23 +25,23 @@ impl SortingOrder {
 }
 
 /// How the [`SortingOrder`] is stored in [Redis].
-impl From<SortingOrder> for String {
+impl From<SortingOrder> for &str {
     fn from(ord: SortingOrder) -> Self {
         match ord {
-            SortingOrder::Ascending  => "ASC".to_string(),
-            SortingOrder::Descending => "DSC".to_string(),
+            SortingOrder::Ascending  => "Ascending",
+            SortingOrder::Descending => "Descending",
         }
     }
 }
 
 /// How the [`SortingOrder`] is retrieved from [Redis].
-impl TryFrom<String> for SortingOrder {
+impl TryFrom<&str> for SortingOrder {
     type Error = ();
 
-    fn try_from(val: String) -> Result<Self, Self::Error> {
-        match val.as_str() {
-            "ASC" => Ok(Self::Ascending),
-            "DSC" => Ok(Self::Descending),
+    fn try_from(val: &str) -> Result<Self, Self::Error> {
+        match val {
+            "Ascending"  => Ok(Self::Ascending),
+            "Descending" => Ok(Self::Descending),
             _ => Err(())
         }
     }

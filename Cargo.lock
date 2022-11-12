@@ -145,6 +145,7 @@ checksum = "338089f42c427b86394a5ee60ff321da23a5c89c9d89514c829687b26359fcff"
 name = "distributed_arcade"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
  "lazy_static",
  "log",
