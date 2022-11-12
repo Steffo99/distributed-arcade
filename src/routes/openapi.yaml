@@ -138,6 +138,22 @@ paths:
       security:
         - XBoardToken: []
       responses:
+        200:
+          description: "Score discarded as it was worse than the previous one"
+          content:
+            application/json:
+              schema:
+                type: number
+                description: "The previous score."
+                example: 2468.12
+        201:
+          description: "Score submitted and updated"
+          content:
+            application/json:
+              schema:
+                type: number
+                description: "The new score."
+                example: 1234.56
         401:
           description: "Missing, invalid or malformed Authorization header"
           content:

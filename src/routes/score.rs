@@ -93,7 +93,8 @@ pub(crate) async fn route_score_put(
     log::trace!("Sorting order is: {order:?}");
 
     log::trace!("Inserting score: {score:?}");
-    redis::cmd("ZADD").arg(&scores_key).arg(order.zadd_mode()).arg(&score).arg(&player).query_async(&mut rconn).await
+    let changed = redis::cmd("ZADD").arg(&scores_key).arg(order.zadd_mode()).arg("CH").arg(&score).arg(&player)
+        .query_async::<redis::aio::Connection, i32>(&mut rconn).await
         .map_err(|_| outcome::redis_cmd_failed())?;
 
     log::trace!("Getting the new score...");
@@ -102,7 +103,10 @@ pub(crate) async fn route_score_put(
     log::trace!("Received score: {nscore:?}");
     
     Ok((
-        StatusCode::OK,
+        match changed.gt(&0) {
+            true => StatusCode::CREATED,
+            false => StatusCode::OK,
+        },
         outcome::req_success!(nscore)
     ))
 }
