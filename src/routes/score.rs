@@ -2,7 +2,7 @@
 
 use axum::http::StatusCode;
 use axum::http::header::HeaderMap;
-use axum::extract::{Extension, Json};
+use axum::extract::{Extension, Json, Query};
 use redis::AsyncCommands;
 use serde::Serialize;
 use serde::Deserialize;
@@ -12,6 +12,14 @@ use crate::shortcuts::token::Authorize;
 use crate::utils::kebab::Skewer;
 use crate::utils::sorting::SortingOrder;
 
+
+/// Expected input data for `GET /score/`.
+pub(crate) struct RouteScoreGetInput {
+    /// The board to access.
+    pub board: String,
+    /// The name of the player to see the score of.
+    pub player: String,
+}
 
 /// Expected input data for `PUT /score/`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -25,6 +33,33 @@ pub(crate) struct RouteScorePutInput {
 }
 
 
+/// Handler for `GET /score/`.
+pub(crate) async fn route_score_get(
+    // Request query
+    Query(RouteScoreGetInput {board, player}): Query<RouteScoreGetInput>,
+    // Redis client
+    Extension(rclient): Extension<redis::Client>,
+) -> outcome::RequestResult {
+    let board = board.to_kebab_lowercase();
+    let player = player.to_kebab_lowercase();
+
+    log::trace!("Determining the Redis key name...");
+    let scores_key = format!("board:{board}:scores");
+
+    let mut rconn = rclient.get_connection_or_504().await?;
+
+    log::trace!("Getting score...");
+    let score = rconn.zscore(&scores_key, &player).await
+        .map_err(|_| outcome::redis_cmd_failed())?;
+    log::trace!("Score is: {score:?}");
+
+    Ok((
+        StatusCode::OK,
+        outcome::req_success!(score)
+    ))
+}
+
+
 /// Handler for `PUT /score/`.
 pub(crate) async fn route_score_put(
     // Request headers
@@ -35,6 +70,7 @@ pub(crate) async fn route_score_put(
     Extension(rclient): Extension<redis::Client>,
 ) -> outcome::RequestResult {
     let board = board.to_kebab_lowercase();
+    let player = player.to_kebab_lowercase();
 
     log::trace!("Determining the Redis key names...");
     let order_key = format!("board:{board}:order");

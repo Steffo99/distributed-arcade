@@ -24,6 +24,7 @@ async fn main() {
         .route("/", get(routes::home::route_home_get))
         .route("/", patch(routes::home::route_home_patch))
         .route("/board/", post(routes::board::route_board_post))
+        .route("/score/", get(routes::score::route_score_get))
         .route("/score/", put(routes::score::route_score_put))
         .layer(axum::Extension(rclient));
 
