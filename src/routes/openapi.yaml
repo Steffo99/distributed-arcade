@@ -101,28 +101,40 @@ paths:
           $ref: "#/components/responses/RedisConnFailed"
 
   /score/:
+    get:
+      summary: "Get a score from a board"
+      tags: ["Score"]
+      parameters:
+        - $ref: "#/components/parameters/board"
+        - $ref: "#/components/parameters/player"
+      responses:
+        200:
+          description: "Score retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: number
+                description: "The score of the specified player."
+                example: 1234.56
+        502:
+          $ref: "#/components/responses/RedisCmdFailed"
+        504:
+          $ref: "#/components/responses/RedisConnFailed"
+
     put:
       summary: "Submit a score to a board"
       tags: ["Score"]
+      parameters:
+        - $ref: "#/components/parameters/board"
+        - $ref: "#/components/parameters/player"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                board:
-                  type: string
-                  description: "The board to submit the score to."
-                  example: "gravityfusion"
-                score:
-                  type: number
-                  description: "The score to submit to the board."
-                  example: 1234.56
-                player:
-                  type: string
-                  description: "The name of the player that the score should be submitted as."
-                  example: "Steffo"
+              type: number
+              description: "The score to submit to the board."
+              example: 1234.56
       security:
         - XBoardToken: []
       responses:
@@ -145,6 +157,20 @@ components:
       type: apiKey
       in: header
       name: "Authorization"
+
+  parameters:
+    board:
+      name: "board"
+      description: "The name of the board to operate on."
+      in: query
+      schema:
+        type: string
+    player:
+      name: "player"
+      description: "The name of the player to operate on."
+      in: query
+      schema:
+        type: string
 
   responses:
     RedisCmdFailed:

@@ -13,22 +13,11 @@ use crate::utils::kebab::Skewer;
 use crate::utils::sorting::SortingOrder;
 
 
-/// Expected input data for `GET /score/`.
-pub(crate) struct RouteScoreGetInput {
+/// Query parameters for `/score/` routes.
+pub(crate) struct RouteScoreQuery {
     /// The board to access.
     pub board: String,
-    /// The name of the player to see the score of.
-    pub player: String,
-}
-
-/// Expected input data for `PUT /score/`.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct RouteScorePutInput {
-    /// The board to submit the score to.
-    pub board: String,
-    /// The score to submit.
-    pub score: f64,
-    /// The name of the player submitting the score.
+    /// The name of the player to access the score of.
     pub player: String,
 }
 
@@ -36,7 +25,7 @@ pub(crate) struct RouteScorePutInput {
 /// Handler for `GET /score/`.
 pub(crate) async fn route_score_get(
     // Request query
-    Query(RouteScoreGetInput {board, player}): Query<RouteScoreGetInput>,
+    Query(RouteScoreQuery {board, player}): Query<RouteScoreQuery>,
     // Redis client
     Extension(rclient): Extension<redis::Client>,
 ) -> outcome::RequestResult {
@@ -64,8 +53,10 @@ pub(crate) async fn route_score_get(
 pub(crate) async fn route_score_put(
     // Request headers
     headers: HeaderMap,
+    // Request query
+    Query(RouteScoreQuery {board, player}): Query<RouteScoreQuery>,
     // Request body
-    Json(RouteScorePutInput {board, score, player}): Json<RouteScorePutInput>,
+    Json(score): Json<f64>,
     // Redis client
     Extension(rclient): Extension<redis::Client>,
 ) -> outcome::RequestResult {
