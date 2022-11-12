@@ -27,7 +27,8 @@ pub(crate) use req_success;
 
 
 /// The execution of a command in Redis failed.
-pub(crate) fn redis_cmd_failed() -> RequestTuple {
+pub(crate) fn redis_cmd_failed(err: redis::RedisError) -> RequestTuple {
+    log::error!("{err:#?}");
     (
         StatusCode::BAD_GATEWAY, 
         req_error!("Could not execute Redis command")

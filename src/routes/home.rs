@@ -26,7 +26,7 @@ pub(crate) async fn route_home_patch(
     log::trace!("Sending PING and expecting PONG...");
     redis::cmd("PING")
         .query_async::<redis::aio::Connection, String>(&mut rconn).await
-        .map_err(|_| outcome::redis_cmd_failed())?
+        .map_err(outcome::redis_cmd_failed)?
         .eq("PONG")
         .then(outcome::success_null)
         .ok_or_else(outcome::redis_unexpected_behaviour)

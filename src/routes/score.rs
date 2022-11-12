@@ -14,6 +14,7 @@ use crate::utils::sorting::SortingOrder;
 
 
 /// Query parameters for `/score/` routes.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct RouteScoreQuery {
     /// The board to access.
     pub board: String,
@@ -39,7 +40,7 @@ pub(crate) async fn route_score_get(
 
     log::trace!("Getting score...");
     let score = rconn.zscore(&scores_key, &player).await
-        .map_err(|_| outcome::redis_cmd_failed())?;
+        .map_err(outcome::redis_cmd_failed)?;
     log::trace!("Score is: {score:?}");
 
     Ok((
@@ -73,7 +74,7 @@ pub(crate) async fn route_score_put(
 
     log::trace!("Checking if the token exists and matches...");
     let btoken = rconn.get::<&str, String>(&token_key).await
-        .map_err(|_| outcome::redis_cmd_failed())?;
+        .map_err(outcome::redis_cmd_failed)?;
 
     if btoken.is_empty() {
         log::trace!("Token is not set, board does not exist...");
@@ -87,7 +88,7 @@ pub(crate) async fn route_score_put(
     
     log::trace!("Determining sorting order...");
     let order = rconn.get::<&str, String>(&order_key).await
-        .map_err(|_| outcome::redis_cmd_failed())?;
+        .map_err(outcome::redis_cmd_failed)?;
     let order = SortingOrder::try_from(order.as_str())
         .map_err(|_| outcome::redis_unexpected_behaviour())?;
     log::trace!("Sorting order is: {order:?}");
@@ -95,11 +96,11 @@ pub(crate) async fn route_score_put(
     log::trace!("Inserting score: {score:?}");
     let changed = redis::cmd("ZADD").arg(&scores_key).arg(order.zadd_mode()).arg("CH").arg(&score).arg(&player)
         .query_async::<redis::aio::Connection, i32>(&mut rconn).await
-        .map_err(|_| outcome::redis_cmd_failed())?;
+        .map_err(outcome::redis_cmd_failed)?;
 
     log::trace!("Getting the new score...");
     let nscore = rconn.zscore::<&str, &str, f64>(&scores_key, &player).await
-        .map_err(|_| outcome::redis_cmd_failed())?;
+        .map_err(outcome::redis_cmd_failed)?;
     log::trace!("Received score: {nscore:?}");
     
     Ok((

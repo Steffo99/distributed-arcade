@@ -28,7 +28,8 @@ paths:
           content:
             application/json:
               schema:
-                type: "null"
+                nullable: true
+                example: null
     patch:
       summary: "Verify that everything is working as expected"
       tags: ["Home"]
@@ -38,7 +39,8 @@ paths:
           content:
             application/json:
               schema:
-                type: "null"
+                nullable: true
+                example: null
         500:
           description: "Did not receive `PONG` from redis"
           content:
@@ -52,6 +54,44 @@ paths:
           $ref: "#/components/responses/RedisConnFailed"
 
   /board/:
+    get:
+      summary: "Get the scores of a board"
+      tags: ["Board"]
+      parameters:
+        - $ref: "#/components/parameters/board"
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/size"
+      responses:
+        200:
+          description: "Scores retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offset:
+                    type: integer
+                    description: "The offset to pass to get the next page, or 0 if there are no more results."
+                    example: 1
+                  scores:
+                    type: array
+                    items:
+                      type: object
+                      description: "A score submitted by an user."
+                      properties:
+                        name:
+                          type: string
+                          description: "The name of the user who submitted the score."
+                          example: "Steffo"
+                        score:
+                          type: number
+                          description: "The submitted score."
+                          example: 1234.56
+        502:
+          $ref: "#/components/responses/RedisCmdFailed"
+        504:
+          $ref: "#/components/responses/RedisConnFailed"
+
     post:
       summary: "Create a new board"
       tags: ["Board"]
@@ -187,6 +227,20 @@ components:
       in: query
       schema:
         type: string
+    offset:
+      name: "offset"
+      description: "The offset to start returning results from."
+      in: query
+      schema:
+        type: integer
+    size:
+      name: "size"
+      description: "How many results to return."
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 500
 
   responses:
     RedisCmdFailed:
