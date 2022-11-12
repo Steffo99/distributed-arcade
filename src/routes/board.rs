@@ -15,7 +15,7 @@ use crate::utils::token::SecureToken;
 
 /// Expected input data for [`POST /board/`](route_board_post).
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct RouteBoardPostInput {
+pub(crate) struct RouteBoardBody {
     /// The name of the board to create.
     pub(crate) name: String,
     /// The [`SortingOrder`] of the scores in the board to create.
@@ -46,7 +46,7 @@ async fn ensure_key_is_empty(rconn: &mut redis::aio::Connection, key: &str) -> R
 /// If successful, returns [`StatusCode::CREATED`].
 pub(crate) async fn route_board_post(
     Extension(rclient): Extension<redis::Client>,
-    Json(RouteBoardPostInput {name, order}): Json<RouteBoardPostInput>,
+    Json(RouteBoardBody {name, order}): Json<RouteBoardBody>,
 ) -> outcome::RequestResult {
 
     let name = name.to_kebab_lowercase();
