@@ -7,6 +7,7 @@ POST http://localhost:30000/
 ### Create a board
 POST http://localhost:30000/board/
 Content-Type: application/json
+Authorization: Bearer qwertyxyzzy
 
 {
     "name": "example",

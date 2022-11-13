@@ -1,16 +1,17 @@
 //! Module defining routes for `/board/`.
 
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::extract::{Extension, Json, Query};
 use redis::AsyncCommands;
 use serde::Serialize;
 use serde::Deserialize;
 use crate::outcome;
 use crate::shortcuts::redis::RedisConnectOr504;
-use crate::shortcuts::token::Generate;
+use crate::shortcuts::token::{Authorize, Generate};
 use crate::utils::sorting::SortingOrder;
 use crate::utils::kebab::Skewer;
 use crate::utils::token::SecureToken;
+use crate::config;
 
 
 /// Expected body for [`POST /board/`](route_board_post).
@@ -118,18 +119,17 @@ pub(crate) async fn route_board_get(
 
 
 /// Handler for `POST /board/`.
-///
-/// Creates a new board, storing the details on [Redis].
-///
-/// Will refuse to overwrite an already existing board.
-/// 
-/// Be aware that once created, boards cannot be deleted, if not manually via `redis-cli`.
-/// 
-/// If successful, returns [`StatusCode::CREATED`].
 pub(crate) async fn route_board_post(
+    headers: HeaderMap,
     Extension(rclient): Extension<redis::Client>,
     Json(RouteBoardBody {name, order}): Json<RouteBoardBody>,
 ) -> outcome::RequestResult {
+
+    let token = headers.get_authorization_or_401("Bearer")?;
+    if token != config::CREATE_TOKEN.as_str() {
+        log::trace!("Token does not match, forbidding...");
+        return Err((StatusCode::FORBIDDEN, outcome::req_error!("Invalid create token")))
+    }
 
     let name = name.to_kebab_lowercase();
 
