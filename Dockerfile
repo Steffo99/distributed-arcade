@@ -21,3 +21,4 @@ RUN cargo install --path . --all-features --bins
 FROM install AS environment
 
 ENV RUST_LOG "warn,distributed_arcade=info"
+ENTRYPOINT ["distributed_arcade"]
