@@ -1,6 +1,6 @@
 [package]
 name = "distributed_arcade"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Stefano Pigozzi <me@steffo.eu>"]
 edition = "2021"
 description = "Fast and simple scoreboard service for games"
