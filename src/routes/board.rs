@@ -141,6 +141,11 @@ pub(crate) async fn route_board_post(
     let mut rconn = rclient.get_connection_or_504().await?;
 
     log::trace!("Ensuring a board does not already exist...");
+
+    log::trace!("Starting Redis transaction...");
+    redis::cmd("MULTI").query_async(&mut rconn).await
+        .map_err(outcome::redis_cmd_failed)?;
+
     ensure_key_is_empty(&mut rconn, &order_key).await?;
     ensure_key_is_empty(&mut rconn, &token_key).await?;
     ensure_key_is_empty(&mut rconn, &scores_key).await?;
@@ -148,10 +153,6 @@ pub(crate) async fn route_board_post(
     let token = SecureToken::new_or_500()?;
 
     log::debug!("Creating board: {name:?}");
-
-    log::trace!("Starting Redis transaction...");
-    redis::cmd("MULTI").query_async(&mut rconn).await
-        .map_err(outcome::redis_cmd_failed)?;
 
     log::trace!("Setting board order...");
     rconn.set(&order_key, Into::<&str>::into(order)).await
