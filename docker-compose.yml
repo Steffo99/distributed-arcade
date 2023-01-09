@@ -16,7 +16,7 @@ services:
       --save 60 1 
       --loglevel notice
     volumes:
-      - "redis_data/redis:/data"
+      - "redis_data:/data"
   distributedarcade:
     image: "ghcr.io/steffo99/distributed-arcade:latest"
     environment:
