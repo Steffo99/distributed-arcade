@@ -9,7 +9,7 @@ FROM debian:buster AS system
 RUN apt-get update
 RUN apt-get install -y libssl1.1 ca-certificates
 RUN rm -rf /var/lib/apt/lists/*
-COPY --from=install /usr/local/cargo/bin/revenants_brooch /usr/local/bin/revenants_brooch
+COPY --from=install /usr/local/cargo/bin/distributed_arcade /usr/local/bin/distributed_arcade
 
 FROM system AS entrypoint
 ENTRYPOINT ["distributed_arcade"]
