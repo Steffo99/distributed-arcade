@@ -1,0 +1,20 @@
+name: "Release new version"
+
+on:
+  # Creation of a new tag starting with v
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  ghcrio:
+    uses: Steffo99/.github/.github/workflows/buildrelease-docker.yml@main
+    needs:
+      - test
+
+  portainer:
+    uses: Steffo99/.github/.github/workflows/deploy-portainer.yml@main
+    needs:
+      - ghcrio
+    secrets:
+      PORTAINER_HOOK_URL: ${{ secrets.PORTAINER_HOOK_URL }}
