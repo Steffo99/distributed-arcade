@@ -292,11 +292,11 @@ components:
   securitySchemes:
     XCreateToken:
       type: http
-      scheme: "Bearer"
+      scheme: "bearer"
       bearerFormat: "setInEnvVars"
     XBoardToken:
       type: http
-      scheme: "Bearer"
+      scheme: "bearer"
       bearerFormat: "gVsuzIxgVfRx4RNl"
 
   parameters:
