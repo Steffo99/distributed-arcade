@@ -17,6 +17,7 @@ services:
     environment:
       REDIS_CONN_STRING: "redis://redis:6379/"
       AXUM_HOST_STRING: "0.0.0.0:80"
-    env_file: "./secrets/distributedarcade.env"
+    env_file:
+      - "stack.env"
     ports:
       - "127.0.0.1:30038:80"  # Reverse proxy this!
