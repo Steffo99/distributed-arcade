@@ -1,7 +1,12 @@
 # Example Docker Compose file setup to run the Distributed Arcade stack with a single node
 # Not really distributed, is it?
+# To be used with Portainer
 
 version: "3.9"
+
+volumes:
+  redis_data:
+    driver: local
 
 services:
   redis:
@@ -11,7 +16,7 @@ services:
       --save 60 1 
       --loglevel notice
     volumes:
-      - "./data/redis:/data"
+      - "redis_data/redis:/data"
   distributedarcade:
     image: "ghcr.io/steffo99/distributed-arcade:latest"
     environment:
