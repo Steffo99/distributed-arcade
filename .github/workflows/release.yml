@@ -9,8 +9,6 @@ on:
 jobs:
   ghcrio:
     uses: Steffo99/.github/.github/workflows/buildrelease-docker.yml@main
-    needs:
-      - test
 
   portainer:
     uses: Steffo99/.github/.github/workflows/deploy-portainer.yml@main
