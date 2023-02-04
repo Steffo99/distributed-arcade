@@ -13,7 +13,7 @@ categories = ["games"]
 [dependencies]
 redis = { version = "0.22.1", features=["r2d2", "ahash", "cluster", "tokio-comp", "connection-manager"] }
 axum = { version = "0.5.17" }
-tokio = { version = "1.21.2", features=["full"] }
+tokio = { version = "1.24.2", features=["full"] }
 r2d2 = { version = "0.8.10" }
 lazy_static = { version = "1.4.0" }
 serde = { version = "1.0.147", features=["derive"] }
