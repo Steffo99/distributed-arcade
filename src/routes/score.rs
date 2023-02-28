@@ -78,14 +78,14 @@ pub(crate) async fn route_score_get(
 
 /// Handler for `PUT /score/`.
 pub(crate) async fn route_score_put(
+    // Redis client (MUST BE ON TOP SINCE AXUM 0.6?)
+    Extension(rclient): Extension<redis::Client>,
     // Request headers
     headers: HeaderMap,
     // Request query
     Query(RouteScoreQuery {board, player}): Query<RouteScoreQuery>,
     // Request body
     Json(score): Json<f64>,
-    // Redis client
-    Extension(rclient): Extension<redis::Client>,
 ) -> outcome::RequestResult {
     let board = board.to_kebab_lowercase();
     let player = player.to_kebab_lowercase();
