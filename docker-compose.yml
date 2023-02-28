@@ -1,0 +1,28 @@
+# Example Docker Compose file setup to run the Distributed Arcade stack with a single node
+# Not really distributed, is it?
+# To be used with Portainer
+
+version: "3.9"
+
+volumes:
+  redis_data:
+    driver: local
+
+services:
+  redis:
+    image: "redis:7.0.5"
+    command: >-
+      redis-server 
+      --save 60 1 
+      --loglevel notice
+    volumes:
+      - "redis_data:/data"
+  distributedarcade:
+    image: "ghcr.io/steffo99/distributed-arcade:latest"
+    environment:
+      REDIS_CONN_STRING: "redis://redis:6379/"
+      AXUM_HOST_STRING: "0.0.0.0:80"
+    env_file:
+      - "stack.env"
+    ports:
+      - "127.0.0.1:30038:80"  # Reverse proxy this!
