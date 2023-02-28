@@ -29,7 +29,16 @@ async fn main() {
         .route("/score/", put(routes::score::route_score_put))
         .layer(axum::Extension(rclient))
         .layer(tower_http::cors::CorsLayer::new()
-            .allow_origin("*".parse::<axum::http::HeaderValue>().expect("* to be a valid origin"))
+            .allow_origin(
+                tower_http::cors::Any
+            )
+            .allow_headers([
+                axum::http::header::AUTHORIZATION,
+                axum::http::header::CONTENT_TYPE,
+            ])
+            .allow_methods(
+                tower_http::cors::Any
+            )
         );
 
     log::info!("Starting Axum server...");
