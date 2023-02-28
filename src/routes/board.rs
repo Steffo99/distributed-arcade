@@ -64,7 +64,7 @@ async fn ensure_key_is_empty(rconn: &mut redis::aio::Connection, key: &str) -> R
         .map_err(outcome::redis_cmd_failed)?
         .eq("none")
         .then_some(())
-        .ok_or((StatusCode::CONFLICT, outcome::req_error!("Board already exists")))
+        .ok_or_else(|| (StatusCode::CONFLICT, outcome::req_error!("Board already exists")))
 }
 
 /// Handler for `GET /board/`.
@@ -140,15 +140,18 @@ pub(crate) async fn route_board_post(
 
     let mut rconn = rclient.get_connection_or_504().await?;
 
+    log::trace!("Watching board keys...");
+    redis::cmd("WATCH").arg(&order_key).arg(&token_key).arg(&scores_key).query_async(&mut rconn).await
+        .map_err(outcome::redis_cmd_failed)?;
+
     log::trace!("Ensuring a board does not already exist...");
+    ensure_key_is_empty(&mut rconn, &order_key).await?;
+    ensure_key_is_empty(&mut rconn, &token_key).await?;
+    ensure_key_is_empty(&mut rconn, &scores_key).await?;
 
     log::trace!("Starting Redis transaction...");
     redis::cmd("MULTI").query_async(&mut rconn).await
         .map_err(outcome::redis_cmd_failed)?;
-
-    ensure_key_is_empty(&mut rconn, &order_key).await?;
-    ensure_key_is_empty(&mut rconn, &token_key).await?;
-    ensure_key_is_empty(&mut rconn, &scores_key).await?;
 
     let token = SecureToken::new_or_500()?;
 
