@@ -4,7 +4,7 @@ Fast and simple scoreboard service for games.
 
 ## Links
 
-[![OpenAPI specification](https://img.shields.io/swagger/valid/3.0?specUrl=https%3A%2F%2Fraw.githubusercontent.com%2FSteffo99%2Fdistributed-arcade%2Fmain%2Fdocs%2Fopenapi.yaml)](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/Steffo99/distributed-arcade/main/docs/openapi.yaml)
+[![OpenAPI specification](https://img.shields.io/swagger/valid/3.0?specUrl=https%3A%2F%2Fraw.githubusercontent.com%2FSteffo99%2Fdistributed-arcade%2Fmain%2Fdocs%2Fopenapi.yaml&label=spec)](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/Steffo99/distributed-arcade/main/docs/openapi.yaml)
  
 [![On Crates.io](https://img.shields.io/crates/v/distributed_arcade)](https://crates.io/crates/distributed_arcade)
  
