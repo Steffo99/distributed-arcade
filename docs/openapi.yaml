@@ -17,7 +17,7 @@ info:
     email: "me@steffo.eu"
   license:
     name: "GNU Affero General Public License v3.0 or later"
-    url: https://github.com/Steffo99/distributed-arcade/blob/main/LICENSE.txt"
+    url: "https://github.com/Steffo99/distributed-arcade/blob/main/LICENSE.txt"
 
 servers:
   - url: "https://arcade.steffo.eu"
