@@ -1,0 +1,16 @@
+/.devcontainer/
+/.github/
+/.idea/
+/.vscode/
+/benches/
+/examples/
+/media/
+/target/
+/tests/
+/.dockerignore
+/.gitignore
+/Dockerfile
+/LICENSE
+/README.md
+/rustfmt.toml
+**/*.rs.bk
