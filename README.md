@@ -8,6 +8,6 @@ Fast and simple scoreboard service for games
  
 [![Chat](https://img.shields.io/matrix/distributed_arcade:ryg.one?server_fqdn=matrix.ryg.one)](https://matrix.to/#/#distributed_arcade:ryg.one)
 
-## Related projects
+-----
 
 Developed as part of [`Steffo99/unimore-bda-2`](https://github.com/Steffo99/unimore-bda-2).
