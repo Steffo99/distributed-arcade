@@ -67,6 +67,7 @@ COPY --from=builder \
     /usr/src/distributed_arcade/target/*/release/distributed_arcade \
     /usr/bin/
 
+USER ${UID:-1000}:${GID:-1000}
 ENTRYPOINT ["distributed_arcade"]
 CMD []
 
