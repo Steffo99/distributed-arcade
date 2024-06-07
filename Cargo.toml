@@ -5,7 +5,7 @@ authors = ["Stefano Pigozzi <me@steffo.eu>"]
 edition = "2021"
 description = "Fast and simple scoreboard service for games"
 repository = "https://github.com/Steffo99/distributed-arcade"
-license = "AGPL-3.0-or-later"
+license = "EUPL-1.2"
 keywords = ["game", "scoreboard", "redis", "axum", "web-api"]
 categories = ["games"]
 
